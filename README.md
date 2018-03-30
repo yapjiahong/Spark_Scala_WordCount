@@ -6,4 +6,6 @@ bin/spark-submit --class GetSrcIp
                 --num-executors 8  
                 ~/hong/spark_getsrcip/target/GetSrcIp-1.0.jar 
                 hdfs:///user/hpds/getsrcipfilter1 
-                hdfs:///user/hpds/sparkscala_excutors11_getsrcip
+                hdfs:///user/hpds/sparkscala_excutors11_getsrcip
+                
+scala -classpath target/Test-1.0.jar Demo
