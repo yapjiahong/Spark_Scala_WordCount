@@ -1,0 +1,22 @@
+spark-shell --driver-memory 16G --executor-memory 24G --executor-cores 10
+
+import sqlContext.implicits._
+
+val df_benign = sc.textFile("hdfs:///user/y00yap00/month_04_benign").map(_.split(",").map(_.trim)).map(c=>(c(0),c(1),c(2),c(3))).toDF()
+val df_mal = sc.textFile("hdfs:///user/y00yap00/month_04_mal").map(_.split(",").map(_.trim)).map(c=>(c(0),c(1),c(2),c(3))).toDF()
+
+df_benign.registerTempTable("benign")
+df_mal.registerTempTable("mal")
+sqlContext.sql("select* from benign RIGHT JOIN mal on benign._1 = mal._1")
+
+//val intersectDF = df_benign.select("_1").intersect(df_mal.select("_1")).show(false)
+
+//val interesect_uniDF =  intersectwDF.distinct()
+//val interesectBC = sc.broadcast(interesect_uniDF.collect.toSet)
+
+val df_new_benign = df_benign.join(df_mal,df_benign("_1")===df_mal("_1"),"right").show(false)
+
+val new_benign_df = sqlContext.sql("select * from benign LEFT SEMI JOIN mal ON (benign._1 = mal._1)")
+
+scala> val new_benign_df = sqlContext.sql("select * from benign where benign._1 not in (select mal._1 from mal)")
+java.lang.RuntimeException: [1.53] failure: ``)'' expected but identifier mal found
