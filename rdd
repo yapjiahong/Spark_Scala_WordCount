@@ -4,7 +4,8 @@ spark-shell --driver-memory 16G --executor-memory 24G --executor-cores 10
 import sqlContext.implicits._
 
 val benign_file = sc.textFile("hdfs:///user/y00yap00/month_04_benign")
-val benign = benign_file.map(_.split(",").map(_.trim)).map(c=>(c(0),c))
+//val benign = benign_file.map(_.split(",").map(_.trim)).map(c=>(c(0),c))
+val benign = benign_file.map(_.split(",").map(_.trim))
 
 val mal_file = sc.textFile("hdfs:///user/y00yap00/month_04_mal")
 val mal = mal_file.map(_.split(",").map(_.trim)).map(c=>(c(0)))
@@ -12,18 +13,62 @@ val malList = mal.distinct().collect()
 
 val tst_benign = benign.mapValues(m=>
 {
+	var loop_break = 0
 	for(a<-malList)
 	{
+		loop_break = 0
 		if(a.equals(m(0)))
 		{
-			m(1)=0
-			m
-		}
-		else
-		{
-			m(1)=1
+			m(1)=0.toString
+			loop_break = 1
 			m
 		}
 	}
+
+	if(loop_break==0)
+	{
+		m(1)=1.toString
+		m
+	}
 }
 )
+
+val tst_benign = benign.map(m=>
+{
+	var loop_break = 0
+	for(a<-malList)
+	{
+		loop_break = 0
+		if(a.equals(m(0)))
+		{
+			loop_break = 1
+			(1,m)
+		}
+	}
+
+	if(loop_break==0)
+	{
+		(0,m)
+	}
+})
+
+val newbenign = benign.foreach(m=>
+{
+	var loop_break = 0
+	for(a<-malList)
+	{
+		loop_break = 0
+		if(a.equals(m(0)))
+		{
+			loop_break = 1
+			(1,m)
+		}
+	}
+
+	if(loop_break==0)
+	{
+		(0,m)
+	}
+})
+
+tst_benign.saveAsTextFile("hdfs:///user/y00yap00/month_04_output")
