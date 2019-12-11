@@ -81,13 +81,13 @@
     </dependency>
     <!-- Spark -->
    
-   <! -- CDH spark -->
+   <!-- CDH spark -->
    <dependency>
     <groupId>org.apache.spark</groupId>
     <artifactId>spark-core_2.11</artifactId>
     <version>2.4.0-cdh6.3.3</version>
   </dependency>
-  <! -- CDH spark -->
+  <!-- CDH spark -->
     
   </dependencies>
 
