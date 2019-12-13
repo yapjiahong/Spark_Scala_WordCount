@@ -1,3 +1,28 @@
+
+scala> df1.show()
++----+----+----+
+|key1|key2|key3|
++----+----+----+
+| aaa|   1|   2|
+| bbb|   3|   4|
+| ccc|   3|   5|
+| bbb|   4|   6|
++----+----+----+
+
+scala> df2.show()
++----+----+----+
+|key1|key2|key4|
++----+----+----+
+| aaa|   2|   2|
+| bbb|   3|   5|
+| ddd|   3|   5|
+| bbb|   4|   6|
+| eee|   1|   2|
+| aaa|   1|   5|
+| fff|   5|   6|
++----+----+----+
+--------------------- 
+
 spark-shell --driver-memory 16G --executor-memory 24G --executor-cores 10
 
 import sqlContext.implicits._
@@ -5,8 +30,95 @@ import sqlContext.implicits._
 val df_benign = sc.textFile("hdfs:///user/y00yap00/month_04_benign").map(_.split(",").map(_.trim)).map(c=>(c(0),c(1),c(2),c(3))).toDF()
 val df_mal = sc.textFile("hdfs:///user/y00yap00/month_04_mal").map(_.split(",").map(_.trim)).map(c=>(c(0),c(1),c(2),c(3))).toDF()
 
-sqlContext.sql("select* from benign RIGHT JOIN mal on benign._1 = mal._1")
+df_benign.registerTempTable("benign")
+df_mal.registerTempTable("mal")
 
 //val intersectwDF = df_benign.select("_1").intersect(df_mal.selec("_1")).show(false)
 
+sqlContext.sql("select* from benign RIGHT JOIN mal on benign._1 = mal._1")
+
 val df_new_benign = df_benign.join(df_mal,df_benign("_1")===df_mal("_1"),"right").show(false)
+
+val benign_file = sc.textFile("hdfs:///user/y00yap00/month_04_benign")
+val benign = benign_file.map(_.split(",").map(_.trim)).map(c=>(c(0),c))
+
+val mal_file = sc.textFile("hdfs:///user/y00yap00/month_04_mal")
+val mal = mal_file.map(_.split(",").map(_.trim)).map(c=>(c(0),c))
+val mal = mal_file.map(_.split(",").map(_.trim)).map(c=>(c(0)))
+val malList = mal.distinct().count()
+val malList = mal.distinct().collect()
+
+val tst_benign = benign.flatMapValues(m=>
+{
+for(a<-malList)
+{
+if(a.equals(m(0)))
+{
+val clonned = m.clone()
+mal(1)=0
+List(m,cloned)
+}
+else
+{
+val clonned = m.clone()
+mal(1)=1
+List(m,cloned)
+}
+}
+}
+)
+
+val tst_benign = benign.mapValues(m=>
+{
+	for(a<-malList)
+	{
+		if(a.equals(m(0)))
+		{
+			m(1)=0
+			m
+		}
+		else
+		{
+			m(1)=1
+			m
+		}
+	}
+}
+)
+
+val tst_benign = benign.map(m=>
+{
+var loop_break = 0
+for(a<-malList)
+{
+loop_break = 0
+if(a.equals(m(0)))
+{
+loop_break = 1
+(1,m)
+}
+}
+if(loop_break==0)
+{
+(0,m)
+}
+})
+
+val newbenign = benign.foreach(m=>
+{
+var loop_break = 0
+for(a<-malList)
+{
+loop_break = 0
+if(a.equals(m(0)))
+{
+loop_break = 1
+(1,m)
+}
+}
+if(loop_break==0)
+{
+(0,m)
+}
+})
+)
